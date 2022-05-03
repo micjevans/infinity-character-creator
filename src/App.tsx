@@ -1,58 +1,66 @@
-import React from 'react';
-import logo from './logo.svg';
-import { Counter } from './features/counter/Counter';
-import './App.css';
+import "./App.css";
+import { RootState } from "./app/store";
+import * as reactRedux from "react-redux";
+import Character from "./Character";
+import {
+  Accordion,
+  AccordionDetails,
+  AccordionSummary,
+  Typography,
+} from "@mui/material";
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 
-function App() {
-  return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <Counter />
-        <p>
-          Edit <code>src/App.tsx</code> and save to reload.
-        </p>
-        <span>
-          <span>Learn </span>
-          <a
-            className="App-link"
-            href="https://reactjs.org/"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            React
-          </a>
-          <span>, </span>
-          <a
-            className="App-link"
-            href="https://redux.js.org/"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Redux
-          </a>
-          <span>, </span>
-          <a
-            className="App-link"
-            href="https://redux-toolkit.js.org/"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Redux Toolkit
-          </a>
-          ,<span> and </span>
-          <a
-            className="App-link"
-            href="https://react-redux.js.org/"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            React Redux
-          </a>
-        </span>
-      </header>
-    </div>
-  );
-}
+const mapState = (state: RootState) => ({
+  character: state.character,
+});
 
-export default App;
+const mapDispatch = {};
+
+const connector = reactRedux.connect(mapState, mapDispatch);
+
+type PropsFromRedux = reactRedux.ConnectedProps<typeof connector>;
+
+interface Props extends PropsFromRedux {}
+
+const App = (props: Props) => (
+  <div className="App">
+    <Accordion>
+      <AccordionSummary
+        expandIcon={<ExpandMoreIcon />}
+        aria-controls="panel1a-content"
+        id="panel1a-header"
+      >
+        <Typography>Accordion 1</Typography>
+      </AccordionSummary>
+      <AccordionDetails>
+        <Character character={props.character} />
+      </AccordionDetails>
+    </Accordion>
+    <Accordion>
+      <AccordionSummary
+        expandIcon={<ExpandMoreIcon />}
+        aria-controls="panel2a-content"
+        id="panel2a-header"
+      >
+        <Typography>Accordion 2</Typography>
+      </AccordionSummary>
+      <AccordionDetails>
+        <Typography>
+          Lorem ipsum dolor sit amet, consectetur adipiscing elit. Suspendisse
+          malesuada lacus ex, sit amet blandit leo lobortis eget.
+        </Typography>
+      </AccordionDetails>
+    </Accordion>
+    <Accordion disabled>
+      <AccordionSummary
+        expandIcon={<ExpandMoreIcon />}
+        aria-controls="panel3a-content"
+        id="panel3a-header"
+      >
+        <Typography>Disabled Accordion</Typography>
+      </AccordionSummary>
+    </Accordion>
+  </div>
+);
+
+export default connector(App);
