@@ -1,10 +1,10 @@
+import { Dictionary } from "@reduxjs/toolkit";
 import {
   ContextStorage,
   NodeSelectEvent,
   SavedDataType,
   SkillData,
 } from "beautiful-skill-tree/dist/models";
-import { Nullable } from "beautiful-skill-tree/dist/models/utils";
 import _ from "lodash";
 import { InfinitySkill } from "../../app/data/infinitySkills";
 import {
@@ -14,31 +14,70 @@ import {
 } from "../../app/data/modHelpers";
 import { Mod } from "../../app/data/mods";
 import { Profile } from "../../app/data/profile";
-import { CharacterTree } from "../reducers/character";
+import { CharacterState, CharacterTree } from "../reducers/character";
 
 export type HandleSaveType = {
   skillTrees: CharacterTree[];
   profile: Profile;
 };
 
-export function skillTreeInc(skillTrees: CharacterTree[], treeId: string) {
-  return skillTrees.map((skillTree) => {
-    let points: number = skillTree.points;
-    if (skillTree.name === treeId) {
-      points = skillTree.points + 1;
-    }
-    return { ...skillTree, points: points };
-  });
+export function processSelectEvent(
+  characters: CharacterState[],
+  characterId: string,
+  event: NodeSelectEvent
+) {
+  const index: number = characters.findIndex(
+    (character) => character.id === characterId
+  );
+  let returnCharacters: CharacterState[] = [...characters];
+  returnCharacters[index] = { ...returnCharacters[index], lastSelect: event };
+  return returnCharacters;
 }
 
-export function skillTreeDec(skillTrees: CharacterTree[], treeId: string) {
-  return skillTrees.map((skillTree) => {
-    let points: number = skillTree.points;
-    if (skillTree.name === treeId) {
-      points = skillTree.points - 1;
-    }
-    return { ...skillTree, points: points };
-  });
+export function skillTreeInc(
+  characters: CharacterState[],
+  characterId: string,
+  treeId: string
+) {
+  const index: number = characters.findIndex(
+    (character) => character.id === characterId
+  );
+  let returnCharacters: CharacterState[] = [...characters];
+  let updateCharacter: CharacterState = {
+    ...returnCharacters[index],
+    skillTrees: [...returnCharacters[index].skillTrees],
+  };
+  const indexTree: number = updateCharacter.skillTrees.findIndex(
+    (skillTree) => skillTree.name === treeId
+  );
+  let updateTree: CharacterTree = { ...updateCharacter.skillTrees[indexTree] };
+  updateTree.points += 1;
+  updateCharacter.skillTrees[indexTree] = updateTree;
+  returnCharacters[index] = updateCharacter;
+  return returnCharacters;
+}
+
+export function skillTreeDec(
+  characters: CharacterState[],
+  characterId: string,
+  treeId: string
+) {
+  const index: number = characters.findIndex(
+    (character) => character.id === characterId
+  );
+  let returnCharacters: CharacterState[] = [...characters];
+  let updateCharacter: CharacterState = {
+    ...returnCharacters[index],
+    skillTrees: [...returnCharacters[index].skillTrees],
+  };
+  const indexTree: number = updateCharacter.skillTrees.findIndex(
+    (skillTree) => skillTree.name === treeId
+  );
+  let updateTree: CharacterTree = { ...updateCharacter.skillTrees[indexTree] };
+  updateTree.points -= 1;
+  updateCharacter.skillTrees[indexTree] = updateTree;
+  returnCharacters[index] = updateCharacter;
+  return returnCharacters;
 }
 
 function traverse(
@@ -93,18 +132,69 @@ function searchTree(
 }
 
 export function handleSave(
-  skillTrees: CharacterTree[],
+  characters: CharacterState[],
   storage: ContextStorage,
+  characterId: string,
   treeId: string,
-  skills: SavedDataType,
-  lastSelect: NodeSelectEvent
+  skills: SavedDataType
 ) {
+  // initialize
+  const index: number = characters.findIndex(
+    (character) => character.id === characterId
+  );
+  let returnCharacters: CharacterState[] = [...characters];
+  if (!returnCharacters[index]) return returnCharacters;
+  let updateCharacter: CharacterState = {
+    ...returnCharacters[index],
+    skillTrees: [...returnCharacters[index].skillTrees],
+  };
+  const indexTree: number = updateCharacter.skillTrees.findIndex(
+    (skillTree) => skillTree.name === treeId.replace(characterId, "")
+  );
+  let updateTree: CharacterTree = { ...updateCharacter.skillTrees[indexTree] };
+
+  // check select
+  let spentPoints = 0;
+  // update spent points
+  // get selected skills from storage
+  let selectedSkills: Map<string, SkillData> = new Map(
+    Object.entries(skills).filter(
+      (keyValue) => keyValue[1].nodeState === "selected"
+    )
+  );
+  console.log(returnCharacters, updateCharacter);
+  flattenTree(updateTree.data).forEach((skill) => {
+    if (selectedSkills.get(skill.id)) {
+      spentPoints += skill.points;
+    }
+  });
+  let lastSelect: NodeSelectEvent = updateCharacter.lastSelect;
+  console.log(lastSelect);
+  let lastSkill: InfinitySkill | null = searchTree(
+    updateTree.data,
+    (node: InfinitySkill) => node.id === lastSelect.key
+  );
+  if (lastSkill) {
+    if (updateTree.points - spentPoints < 0) {
+      skills[lastSelect.key].nodeState = "unlocked";
+      spentPoints -= lastSkill.points;
+    }
+  }
+
+  // update characters
+  updateCharacter.skillTrees[indexTree] = {
+    ...updateTree,
+    spentPoints: spentPoints,
+  };
+  // update storage
+  storage.setItem(`skills-${treeId}`, JSON.stringify(skills));
+
+  // collect character modifiers
   let modsToUpdate: Mod[] = [];
-  let returnSkillTrees: CharacterTree[] = skillTrees.map((skillTree) => {
+  updateCharacter.skillTrees.forEach((skillTree) => {
     let storeString: string | null = storage.getItem(
-      `skills-${skillTree.name}`
+      `skills-${characterId + skillTree.name}`
     );
-    let spentPoints: number = 0;
     if (storeString) {
       // get selected skills from storage
       let selectedSkills: Map<string, SkillData> = new Map(
@@ -112,29 +202,6 @@ export function handleSave(
           (keyValue) => keyValue[1].nodeState === "selected"
         )
       );
-
-      // update spent points
-      flattenTree(skillTree.data).forEach((skill) => {
-        if (selectedSkills.get(skill.id)) {
-          spentPoints += skill.points;
-        }
-      });
-
-      // check previous save and remove if needed
-      if (skillTree.name === treeId) {
-        let lastSkill: InfinitySkill | null = searchTree(
-          skillTree.data,
-          (node: InfinitySkill) => node.id === lastSelect.key
-        );
-        if (lastSkill) {
-          if (skillTree.points - spentPoints < 0) {
-            skills[lastSelect.key].nodeState = "unlocked";
-            selectedSkills.delete(lastSelect.key);
-            spentPoints -= lastSkill.points;
-          }
-        }
-      }
-
       // add all selected mods
       flattenTree(skillTree.data).forEach((skill) => {
         if (selectedSkills.get(skill.id)) {
@@ -142,15 +209,8 @@ export function handleSave(
           if (skillMods) modsToUpdate = modsToUpdate.concat(skillMods);
         }
       });
-      modsToUpdate.push(getModByTreeId(treeId, spentPoints));
+      modsToUpdate.push(getModByTreeId(skillTree.name, skillTree.spentPoints));
     }
-
-    // update storage
-    storage.setItem(`skills-${treeId}`, JSON.stringify(skills));
-    return {
-      ...skillTree,
-      spentPoints: spentPoints,
-    };
   });
 
   let returnProfile: Profile = {
@@ -168,9 +228,68 @@ export function handleSave(
     skills: [],
   };
   returnProfile = updateProfileByMods(returnProfile, modsToUpdate);
-  let returnValue: HandleSaveType = {
-    skillTrees: returnSkillTrees,
-    profile: returnProfile,
-  };
-  return returnValue;
+  returnCharacters[index] = { ...updateCharacter, profile: returnProfile };
+  return returnCharacters;
 }
+
+// let charactersCopy: Dictionary<CharacterState> = { ...characters };
+// let characterState: CharacterState | undefined = charactersCopy[characterId];
+// if (characterState) {
+//   let lastSelect: NodeSelectEvent = characterState.lastSelect;
+//   let returnSkillTrees: CharacterTree[] = Object.values(
+//     characterState.skillTrees
+//   ).map((skillTreeArray) => {
+//     let skillTree: CharacterTree = skillTreeArray;
+//     let storeString: string | null = storage.getItem(
+//       `skills-${skillTree.name}`
+//     );
+//     let spentPoints: number = 0;
+//     if (storeString) {
+//       // get selected skills from storage
+//       let selectedSkills: Map<string, SkillData> = new Map(
+//         Object.entries(
+//           skillTree.name === treeId
+//             ? skills
+//             : (JSON.parse(storeString) as SavedDataType)
+//         ).filter((keyValue) => keyValue[1].nodeState === "selected")
+//       );
+
+// // update spent points
+// flattenTree(skillTree.data).forEach((skill) => {
+//   if (selectedSkills.get(skill.id)) {
+//     spentPoints += skill.points;
+//   }
+// });
+
+//       // check previous save and remove if needed
+//       if (skillTree.name === treeId) {
+//         let lastSkill: InfinitySkill | null = searchTree(
+//           skillTree.data,
+//           (node: InfinitySkill) => node.id === lastSelect.key
+//         );
+//         if (lastSkill) {
+//           if (skillTree.points - spentPoints < 0) {
+//             skills[lastSelect.key].nodeState = "unlocked";
+//             selectedSkills.delete(lastSelect.key);
+//             spentPoints -= lastSkill.points;
+//           }
+//         }
+//       }
+
+//       // add all selected mods
+//       flattenTree(skillTree.data).forEach((skill) => {
+//         if (selectedSkills.get(skill.id)) {
+//           let skillMods: Mod[] | undefined = getModsBySkillId(skill.id);
+//           if (skillMods) modsToUpdate = modsToUpdate.concat(skillMods);
+//         }
+//       });
+//       modsToUpdate.push(getModByTreeId(skillTree.name, spentPoints));
+//     }
+
+//     // update storage
+//     storage.setItem(`skills-${treeId}`, JSON.stringify(skills));
+//     return {
+//       ...skillTree,
+//       spentPoints: spentPoints,
+//     };
+//   });

@@ -82,7 +82,6 @@ export class NameMod implements SubMod {
   }
 
   combineMods(mods: NameMod[]): NameMod {
-    console.log("here");
     return mods.reduce(
       (greatest, mod) =>
         (greatest = greatest.level > mod.level ? greatest : mod),

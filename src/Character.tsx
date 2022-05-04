@@ -102,6 +102,7 @@ const Character = (props: Props) => {
             return (
               <TabPanel key={attribute.name} value={attribute.name}>
                 <AttributeTree
+                  characterId={props.character.id}
                   key={attribute.name}
                   data={attribute.data}
                   description={attribute.description}

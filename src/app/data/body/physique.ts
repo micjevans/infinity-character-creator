@@ -230,9 +230,7 @@ export const physiqueSkills: Dictionary<Mod[]> = {
     new AttributeMod(Attribute.PH, 2),
     new AttributeMod(Attribute.CC, 2),
     new AttributeMod(Attribute.ARM, 1),
-    new AttributeMod(Attribute.W, 1),
     new AttributeMod(Attribute.S, 4),
-    new AttributeMod(Attribute.W, 1),
   ],
   "bearpodian": [
     new AttributeMod(Attribute.CC, 1),

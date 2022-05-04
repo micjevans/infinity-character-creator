@@ -6,7 +6,6 @@ import {
   SkillGroupDataType,
 } from "beautiful-skill-tree";
 import { RootState } from "./app/store";
-import * as action from "./redux/reducers/character";
 import * as reactRedux from "react-redux";
 import {
   ContextStorage,
@@ -14,31 +13,31 @@ import {
   SavedDataType,
 } from "beautiful-skill-tree/dist/models";
 import { Button, Paper, Stack, styled } from "@mui/material";
+import { ATTRIBUTE_HANDLE_SAVE, ATTRIBUTE_SELECT_EVENT, ATTRIBUTE_TREE_DEC, ATTRIBUTE_TREE_INC } from "./redux/reducers/characters";
 
-const mapState = (state: RootState) => ({
-  lastSelect: state.character.lastSelect,
-});
+const mapState = (state: RootState) => ({});
 
 const mapDispatch = {
-  handleNodeSelect: (event: NodeSelectEvent) => ({
-    type: action.ATTRIBUTE_SELECT_EVENT,
-    payload: event,
+  handleNodeSelect: (characterId: string, event: NodeSelectEvent) => ({
+    type: ATTRIBUTE_SELECT_EVENT,
+    payload: {characterId: characterId, event: event},
   }),
   handleSave: (
+    characterId: string,
     storage: ContextStorage,
     treeId: string,
     skills: SavedDataType
   ) => ({
-    type: action.ATTRIBUTE_HANDLE_SAVE,
-    payload: { storage: storage, treeId: treeId, skills: skills },
+    type: ATTRIBUTE_HANDLE_SAVE,
+    payload: { characterId: characterId, storage: storage, treeId: treeId, skills: skills },
   }),
-  increment: (treeId: string) => ({
-    type: action.ATTRIBUTE_TREE_INC,
-    payload: treeId,
+  increment: (characterId: string, treeId: string) => ({
+    type: ATTRIBUTE_TREE_INC,
+    payload: {characterId: characterId, treeId: treeId},
   }),
-  decrement: (treeId: string) => ({
-    type: action.ATTRIBUTE_TREE_DEC,
-    payload: treeId,
+  decrement: (characterId: string, treeId: string) => ({
+    type: ATTRIBUTE_TREE_DEC,
+    payload: {characterId: characterId, treeId: treeId},
   }),
 };
 
@@ -55,6 +54,7 @@ const connector = reactRedux.connect(mapState, mapDispatch);
 type PropsFromRedux = reactRedux.ConnectedProps<typeof connector>;
 
 interface Props extends PropsFromRedux {
+  characterId: string;
   key: string;
   points: number;
   spentPoints: number;
@@ -69,14 +69,14 @@ const AttributeTree = (props: Props) => (
     <Stack direction="row" spacing={2}>
       <Button
         variant="contained"
-        onClick={() => props.increment(props.treeId)}
+        onClick={() => props.increment(props.characterId, props.treeId)}
       >
         +
       </Button>
       <Item>{props.spentPoints + "/" + props.points}</Item>
       <Button
         variant="contained"
-        onClick={() => props.decrement(props.treeId)}
+        onClick={() => props.decrement(props.characterId, props.treeId)}
       >
         -
       </Button>
@@ -86,12 +86,16 @@ const AttributeTree = (props: Props) => (
         {({ selectedSkillCount }: SkillGroupDataType) => {
           return (
             <SkillTree
-              treeId={props.treeId}
+              treeId={props.characterId + props.treeId}
               title=""
               data={props.data}
               description={props.description}
-              handleSave={props.handleSave}
-              handleNodeSelect={props.handleNodeSelect}
+              handleSave={(
+                storage: ContextStorage,
+                treeId: string,
+                skills: SavedDataType
+              ) => props.handleSave(props.characterId, storage, treeId, skills)}
+              handleNodeSelect={(event) => props.handleNodeSelect(props.characterId, event)}
             />
           );
         }}

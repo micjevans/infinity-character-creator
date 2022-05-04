@@ -4,19 +4,19 @@ import {
   Action,
   combineReducers,
 } from "@reduxjs/toolkit";
-import characterReducer from "../redux/reducers/character";
 import storage from 'redux-persist/lib/storage';
 import {
     persistReducer
 } from 'redux-persist';
+import charactersReducer from "../redux/reducers/characters";
 
 const persistConfig = {
-  key: 'character',
+  key: 'characters',
   storage: storage,
 };
 
 const reducers = combineReducers({
-  character: characterReducer
+  charactersReducer
 });
 
 const persistedReducer = persistReducer(persistConfig, reducers)

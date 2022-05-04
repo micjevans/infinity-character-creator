@@ -6,16 +6,26 @@ import {
   Accordion,
   AccordionDetails,
   AccordionSummary,
+  Button,
   Typography,
 } from "@mui/material";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
+import { CREATE_CHARACTER, DELETE_CHARACTER } from "./redux/reducers/characters";
 
 const mapState = (state: RootState) => ({
-  character: state.character,
+  characters: state.charactersReducer.characters,
 });
 
-const mapDispatch = {};
-
+const mapDispatch = {
+  createCharacter: (name: string) => ({
+    type: CREATE_CHARACTER,
+    payload: name,
+  }),
+  deleteCharacter: (id: string) => ({
+    type: DELETE_CHARACTER,
+    payload: id,
+  }),
+};
 const connector = reactRedux.connect(mapState, mapDispatch);
 
 type PropsFromRedux = reactRedux.ConnectedProps<typeof connector>;
@@ -24,41 +34,29 @@ interface Props extends PropsFromRedux {}
 
 const App = (props: Props) => (
   <div className="App">
+    {props.characters.map((character) => {
+        return (
+          <Accordion>
+            <AccordionSummary
+              expandIcon={<ExpandMoreIcon />}
+              aria-controls="panel1a-content"
+              id="panel1a-header"
+            >
+              <Typography>Accordion 1</Typography>
+            </AccordionSummary>
+            <AccordionDetails>
+              <Character character={character} />
+            </AccordionDetails>
+          </Accordion>
+        );
+    })}
     <Accordion>
-      <AccordionSummary
-        expandIcon={<ExpandMoreIcon />}
-        aria-controls="panel1a-content"
-        id="panel1a-header"
+    <Button
+        variant="contained"
+        onClick={() => props.createCharacter("John")}
       >
-        <Typography>Accordion 1</Typography>
-      </AccordionSummary>
-      <AccordionDetails>
-        <Character character={props.character} />
-      </AccordionDetails>
-    </Accordion>
-    <Accordion>
-      <AccordionSummary
-        expandIcon={<ExpandMoreIcon />}
-        aria-controls="panel2a-content"
-        id="panel2a-header"
-      >
-        <Typography>Accordion 2</Typography>
-      </AccordionSummary>
-      <AccordionDetails>
-        <Typography>
-          Lorem ipsum dolor sit amet, consectetur adipiscing elit. Suspendisse
-          malesuada lacus ex, sit amet blandit leo lobortis eget.
-        </Typography>
-      </AccordionDetails>
-    </Accordion>
-    <Accordion disabled>
-      <AccordionSummary
-        expandIcon={<ExpandMoreIcon />}
-        aria-controls="panel3a-content"
-        id="panel3a-header"
-      >
-        <Typography>Disabled Accordion</Typography>
-      </AccordionSummary>
+        Create Character
+      </Button>
     </Accordion>
   </div>
 );
