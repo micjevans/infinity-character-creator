@@ -14,6 +14,7 @@ import {
 } from "beautiful-skill-tree/dist/models";
 import { Button, Paper, Stack, styled } from "@mui/material";
 import { ATTRIBUTE_HANDLE_SAVE, ATTRIBUTE_SELECT_EVENT, ATTRIBUTE_TREE_DEC, ATTRIBUTE_TREE_INC } from "./redux/reducers/characters";
+import { Item } from "./Item";
 
 const mapState = (state: RootState) => ({});
 
@@ -40,14 +41,6 @@ const mapDispatch = {
     payload: {characterId: characterId, treeId: treeId},
   }),
 };
-
-const Item = styled(Paper)(({ theme }) => ({
-  backgroundColor: theme.palette.mode === 'dark' ? '#1A2027' : '#fff',
-  ...theme.typography.body2,
-  padding: theme.spacing(1),
-  textAlign: 'center',
-  color: theme.palette.text.secondary,
-}));
 
 const connector = reactRedux.connect(mapState, mapDispatch);
 

@@ -11,7 +11,7 @@ import {
 import charactersReducer from "../redux/reducers/characters";
 
 const persistConfig = {
-  key: 'characters',
+  key: 'charactersReducer',
   storage: storage,
 };
 

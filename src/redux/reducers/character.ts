@@ -6,6 +6,7 @@ import { NodeSelectEvent } from "beautiful-skill-tree";
 import { InfinitySkill } from "../../app/data/infinitySkills";
 import { DataType } from "../../app/data/dataTypes";
 import { v4 } from "uuid";
+import storage from "redux-persist/es/storage";
 
 export type CharacterTree = {
   points: number;
@@ -22,6 +23,9 @@ export type CharacterState = {
   skillTrees: CharacterTree[];
   lastSelect: NodeSelectEvent;
   profile: Profile;
+  weapons: string[],
+  equipment: string[],
+  skills: string[]
 };
 
 
@@ -69,12 +73,31 @@ const initialState: CharacterState = {
     bts: 0,
     w: 1,
     s: 2,
+    weapons: [],
     equipment: [],
     skills: []
-  }
+  },
+  weapons: [],
+  equipment: [],
+  skills: []
 };
 
 export function createCharacter(name: string): CharacterState {
   let character: CharacterState = {...initialState, id: v4()};
   return character;
 }
+
+export function deleteCharacter(characters: CharacterState[], characterId: string): CharacterState[] {
+  const index: number = characters.findIndex(
+    (character) => character.id === characterId
+  );
+  let returnCharacters: CharacterState[] = [...characters];
+  returnCharacters[index].skillTrees.forEach((skillTree) => {
+    storage.removeItem(
+      `skills-${characterId + skillTree.name}`
+    );
+  });
+  return returnCharacters.filter(character => character.id !== characterId);
+}
+
+

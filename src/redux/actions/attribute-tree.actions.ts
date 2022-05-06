@@ -16,11 +16,6 @@ import { Mod } from "../../app/data/mods";
 import { Profile } from "../../app/data/profile";
 import { CharacterState, CharacterTree } from "../reducers/character";
 
-export type HandleSaveType = {
-  skillTrees: CharacterTree[];
-  profile: Profile;
-};
-
 export function processSelectEvent(
   characters: CharacterState[],
   characterId: string,
@@ -162,14 +157,12 @@ export function handleSave(
       (keyValue) => keyValue[1].nodeState === "selected"
     )
   );
-  console.log(returnCharacters, updateCharacter);
   flattenTree(updateTree.data).forEach((skill) => {
     if (selectedSkills.get(skill.id)) {
       spentPoints += skill.points;
     }
   });
   let lastSelect: NodeSelectEvent = updateCharacter.lastSelect;
-  console.log(lastSelect);
   let lastSkill: InfinitySkill | null = searchTree(
     updateTree.data,
     (node: InfinitySkill) => node.id === lastSelect.key
@@ -224,6 +217,7 @@ export function handleSave(
     bts: 0,
     w: 1,
     s: 2,
+    weapons: [],
     equipment: [],
     skills: [],
   };
@@ -232,64 +226,3 @@ export function handleSave(
   return returnCharacters;
 }
 
-// let charactersCopy: Dictionary<CharacterState> = { ...characters };
-// let characterState: CharacterState | undefined = charactersCopy[characterId];
-// if (characterState) {
-//   let lastSelect: NodeSelectEvent = characterState.lastSelect;
-//   let returnSkillTrees: CharacterTree[] = Object.values(
-//     characterState.skillTrees
-//   ).map((skillTreeArray) => {
-//     let skillTree: CharacterTree = skillTreeArray;
-//     let storeString: string | null = storage.getItem(
-//       `skills-${skillTree.name}`
-//     );
-//     let spentPoints: number = 0;
-//     if (storeString) {
-//       // get selected skills from storage
-//       let selectedSkills: Map<string, SkillData> = new Map(
-//         Object.entries(
-//           skillTree.name === treeId
-//             ? skills
-//             : (JSON.parse(storeString) as SavedDataType)
-//         ).filter((keyValue) => keyValue[1].nodeState === "selected")
-//       );
-
-// // update spent points
-// flattenTree(skillTree.data).forEach((skill) => {
-//   if (selectedSkills.get(skill.id)) {
-//     spentPoints += skill.points;
-//   }
-// });
-
-//       // check previous save and remove if needed
-//       if (skillTree.name === treeId) {
-//         let lastSkill: InfinitySkill | null = searchTree(
-//           skillTree.data,
-//           (node: InfinitySkill) => node.id === lastSelect.key
-//         );
-//         if (lastSkill) {
-//           if (skillTree.points - spentPoints < 0) {
-//             skills[lastSelect.key].nodeState = "unlocked";
-//             selectedSkills.delete(lastSelect.key);
-//             spentPoints -= lastSkill.points;
-//           }
-//         }
-//       }
-
-//       // add all selected mods
-//       flattenTree(skillTree.data).forEach((skill) => {
-//         if (selectedSkills.get(skill.id)) {
-//           let skillMods: Mod[] | undefined = getModsBySkillId(skill.id);
-//           if (skillMods) modsToUpdate = modsToUpdate.concat(skillMods);
-//         }
-//       });
-//       modsToUpdate.push(getModByTreeId(skillTree.name, spentPoints));
-//     }
-
-//     // update storage
-//     storage.setItem(`skills-${treeId}`, JSON.stringify(skills));
-//     return {
-//       ...skillTree,
-//       spentPoints: spentPoints,
-//     };
-//   });

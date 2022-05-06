@@ -35,6 +35,7 @@ export enum Stat {
     bts: number,
     w: number,
     s: number,
-    equipment: Equipment[];
-    skills: string[];
+    weapons: string[],
+    equipment: string[],
+    skills: string[]
   }

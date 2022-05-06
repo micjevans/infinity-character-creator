@@ -96,6 +96,7 @@ const Character = (props: Props) => {
                   />
                 );
               })}
+              <Tab key={"Equipment"} label={"Equipment"} value={"Equipment"} />
             </TabList>
           </Box>
           {props.character.skillTrees.map((attribute: CharacterTree) => {
@@ -114,6 +115,7 @@ const Character = (props: Props) => {
               </TabPanel>
             );
           })}
+          <TabPanel key={"Equipment"} value={"Equipment"}>Hello</TabPanel>
         </TabContext>
       </Box>
     </div>
